@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/Xanonymous-GitHub/claude-switch/internal/config"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
-	"github.com/username/claude-switch/internal/config"
 )
 
 var listCmd = &cobra.Command{

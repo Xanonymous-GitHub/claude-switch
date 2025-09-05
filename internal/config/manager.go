@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Xanonymous-GitHub/claude-switch/internal/validation"
 	"github.com/google/uuid"
-	"github.com/username/claude-switch/internal/validation"
 )
 
 // Config represents a single Claude Code configuration

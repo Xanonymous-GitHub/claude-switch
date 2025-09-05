@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Xanonymous-GitHub/claude-switch/internal/config"
+	"github.com/Xanonymous-GitHub/claude-switch/internal/storage"
+	"github.com/Xanonymous-GitHub/claude-switch/internal/validation"
 	"github.com/spf13/cobra"
-	"github.com/username/claude-switch/internal/config"
-	"github.com/username/claude-switch/internal/storage"
-	"github.com/username/claude-switch/internal/validation"
 )
 
 var applyCmd = &cobra.Command{

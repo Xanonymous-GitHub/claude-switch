@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Xanonymous-GitHub/claude-switch/internal/config"
 	"github.com/spf13/cobra"
-	"github.com/username/claude-switch/internal/config"
 )
 
 var removeCmd = &cobra.Command{

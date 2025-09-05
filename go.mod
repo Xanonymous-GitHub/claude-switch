@@ -1,4 +1,4 @@
-module github.com/username/claude-switch
+module github.com/Xanonymous-GitHub/claude-switch
 
 go 1.25
 

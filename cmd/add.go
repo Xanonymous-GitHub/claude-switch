@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Xanonymous-GitHub/claude-switch/internal/config"
+	"github.com/Xanonymous-GitHub/claude-switch/internal/editor"
+	"github.com/Xanonymous-GitHub/claude-switch/internal/storage"
 	"github.com/spf13/cobra"
-	"github.com/username/claude-switch/internal/config"
-	"github.com/username/claude-switch/internal/editor"
-	"github.com/username/claude-switch/internal/storage"
 )
 
 var addCmd = &cobra.Command{
