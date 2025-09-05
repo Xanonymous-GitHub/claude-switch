@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/username/claude-switch/internal/validation"
 )
 
 // Config represents a single Claude Code configuration
@@ -81,6 +82,11 @@ func (m *Manager) AddConfig(tempFile, name, description string) (*Config, error)
 		return nil, fmt.Errorf("config name cannot be empty")
 	}
 
+	// Validate JSON in temporary file before proceeding
+	if err := validation.ValidateClaudeSettingsFile(tempFile); err != nil {
+		return nil, fmt.Errorf("invalid configuration file: %w", err)
+	}
+
 	// Check if name already exists
 	for _, config := range m.configs {
 		if config.Name == name {
@@ -138,6 +144,11 @@ func (m *Manager) ApplyConfig(identifier string) error {
 	config, err := m.GetConfig(identifier)
 	if err != nil {
 		return err
+	}
+
+	// Validate the configuration file before applying
+	if err := validation.ValidateClaudeSettingsFile(config.FilePath); err != nil {
+		return fmt.Errorf("configuration file is invalid: %w", err)
 	}
 
 	settingsPath, err := m.GetClaudeSettingsPath()
@@ -231,6 +242,27 @@ func (m *Manager) saveConfigs() error {
 	}
 
 	return nil
+}
+
+// ValidateConfig validates a stored configuration file
+func (m *Manager) ValidateConfig(identifier string) error {
+	config, err := m.GetConfig(identifier)
+	if err != nil {
+		return err
+	}
+
+	return validation.ValidateClaudeSettingsFile(config.FilePath)
+}
+
+// ValidateAllConfigs validates all stored configuration files
+func (m *Manager) ValidateAllConfigs() []error {
+	var errors []error
+	for _, config := range m.configs {
+		if err := validation.ValidateClaudeSettingsFile(config.FilePath); err != nil {
+			errors = append(errors, fmt.Errorf("config '%s' (%s): %w", config.Name, config.ID, err))
+		}
+	}
+	return errors
 }
 
 // copyFile copies a file from src to dst

@@ -32,24 +32,24 @@ func getEditor() string {
 	// Platform-specific defaults
 	switch runtime.GOOS {
 	case "windows":
-		// Try common Windows editors
-		editors := []string{"code", "notepad++", "notepad"}
+		// Try common Windows editors (include Neovim support)
+		editors := []string{"code", "nvim", "notepad++", "notepad"}
 		for _, editor := range editors {
 			if _, err := exec.LookPath(editor); err == nil {
 				return editor
 			}
 		}
 	case "darwin":
-		// Try common macOS editors
-		editors := []string{"code", "vim", "nano", "emacs"}
+		// Try common macOS editors (prioritize Neovim over vim)
+		editors := []string{"code", "nvim", "vim", "nano", "emacs"}
 		for _, editor := range editors {
 			if _, err := exec.LookPath(editor); err == nil {
 				return editor
 			}
 		}
 	default:
-		// Try common Linux editors
-		editors := []string{"code", "vim", "nano", "emacs", "gedit"}
+		// Try common Linux editors (prioritize Neovim over vim)
+		editors := []string{"code", "nvim", "vim", "nano", "emacs", "gedit"}
 		for _, editor := range editors {
 			if _, err := exec.LookPath(editor); err == nil {
 				return editor

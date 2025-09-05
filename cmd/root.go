@@ -14,10 +14,11 @@ var rootCmd = &cobra.Command{
 Claude Code settings.json configurations and switch between them easily.
 
 Features:
-  - Add new configurations using your preferred editor
+  - Add new configurations using your preferred editor (supports Neovim)
   - List all saved configurations
-  - Apply any configuration to ~/.claude/settings.json
+  - Apply any configuration to ~/.claude/settings.json with JSON validation
   - Remove configurations you no longer need
+  - Validate configuration files for proper JSON formatting
   - Safe backup and restore mechanisms`,
 	Version: "1.0.0",
 	Example: `  # Add a new configuration
@@ -28,6 +29,9 @@ Features:
 
   # Apply a specific configuration
   claude-switch apply my-config
+
+  # Validate configurations
+  claude-switch validate
 
   # Remove a configuration
   claude-switch remove old-config`,
@@ -47,6 +51,7 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(applyCmd)
 	rootCmd.AddCommand(removeCmd)
+	rootCmd.AddCommand(validateCmd)
 }
 
 // checkPrerequisites validates the environment before running commands

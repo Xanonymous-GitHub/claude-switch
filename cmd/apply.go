@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/username/claude-switch/internal/config"
 	"github.com/username/claude-switch/internal/storage"
+	"github.com/username/claude-switch/internal/validation"
 )
 
 var applyCmd = &cobra.Command{
@@ -134,8 +135,8 @@ func runApply(cmd *cobra.Command, args []string) error {
 	}
 
 	// Validate the configuration file before applying
-	if err := storage.IsValidJSON(cfg.FilePath); err != nil {
-		return fmt.Errorf("configuration file is not valid JSON: %w", err)
+	if err := validation.ValidateClaudeSettingsFile(cfg.FilePath); err != nil {
+		return fmt.Errorf("configuration file is invalid: %w", err)
 	}
 
 	// Apply the configuration
