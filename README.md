@@ -4,10 +4,11 @@ A modern Go CLI tool to manage multiple Claude Code settings.json configurations
 
 ## Features
 
-- 🎯 **Add configurations** - Create new configs using your preferred editor
+- 🎯 **Add configurations** - Create new configs using your preferred editor (supports Neovim)
 - 📋 **List configurations** - View all saved configs in a beautiful table
-- 🔄 **Apply configurations** - Switch to any saved configuration safely
+- 🔄 **Apply configurations** - Switch to any saved configuration safely with JSON validation
 - 🗑️ **Remove configurations** - Delete configs you no longer need
+- ✅ **Validate configurations** - Check JSON syntax and structure before applying
 - 💾 **Safe operations** - Automatic backups and atomic file operations
 - 🎨 **Beautiful output** - Colored tables and clear status messages
 - 🔒 **JSON validation** - Ensures all configurations are valid JSON
@@ -17,13 +18,13 @@ A modern Go CLI tool to manage multiple Claude Code settings.json configurations
 ### Using go install
 
 ```bash
-go install github.com/username/claude-switch@latest
+go install github.com/Xanonymous-GitHub/claude-switch@latest
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/username/claude-switch.git
+git clone git@github.com:Xanonymous-GitHub/claude-switch.git
 cd claude-switch
 go build -o claude-switch
 ```
@@ -81,6 +82,14 @@ claude-switch remove my-config --force    # Skip confirmation
 claude-switch remove my-config --dry-run  # Preview what would be removed
 ```
 
+### Validate configurations
+
+```bash
+claude-switch validate                    # Validate all configurations
+claude-switch validate my-config         # Validate specific configuration
+claude-switch validate --verbose --all   # Detailed validation output
+```
+
 ### Help
 
 ```bash
@@ -104,16 +113,17 @@ claude-switch add --help        # Command-specific help
 
 ### Supported Editors
 
-The tool automatically detects available editors:
+The tool automatically detects available editors with Neovim support:
 
-- **Windows**: VS Code, Notepad++, Notepad
-- **macOS**: VS Code, vim, nano, emacs
-- **Linux**: VS Code, vim, nano, emacs, gedit
+- **Windows**: VS Code, Neovim, Notepad++, Notepad
+- **macOS**: VS Code, Neovim, vim, nano, emacs
+- **Linux**: VS Code, Neovim, vim, nano, emacs, gedit
 
 Set your preferred editor:
 
 ```bash
 export EDITOR=code    # VS Code
+export EDITOR=nvim    # Neovim
 export EDITOR=vim     # Vim
 export EDITOR=nano    # Nano
 ```
@@ -132,6 +142,9 @@ claude-switch list
 # Apply a configuration
 claude-switch apply work-setup
 
+# Validate configurations
+claude-switch validate
+
 # Remove an old configuration
 claude-switch remove old-config
 ```
@@ -147,6 +160,9 @@ claude-switch list --detailed
 
 # Apply with confirmation
 claude-switch apply work-setup --confirm
+
+# Validate with verbose output
+claude-switch validate --verbose --all
 
 # Preview removal
 claude-switch remove old-config --dry-run
