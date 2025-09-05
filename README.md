@@ -17,8 +17,11 @@ A modern Go CLI tool to manage multiple Claude Code settings.json configurations
 
 ### Using go install
 
+- Please [install Go](https://go.dev/doc/install) first.
+
 ```bash
 go install github.com/Xanonymous-GitHub/claude-switch@latest
+export PATH="$PATH:$(go env GOPATH)/bin" # Add this to your .zshrc or .bashrc or others
 ```
 
 ### From source
