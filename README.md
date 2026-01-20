@@ -7,11 +7,13 @@ A modern Go CLI tool to manage multiple Claude Code settings.json configurations
 - 🎯 **Add configurations** - Create new configs using your preferred editor (supports Neovim)
 - 📋 **List configurations** - View all saved configs in a beautiful table
 - 🔄 **Apply configurations** - Switch to any saved configuration safely with JSON validation
+- 🔁 **Sync configurations** - Save live settings changes back to stored configs
 - 🗑️ **Remove configurations** - Delete configs you no longer need
 - ✅ **Validate configurations** - Check JSON syntax and structure before applying
 - 💾 **Safe operations** - Automatic backups and atomic file operations
 - 🎨 **Beautiful output** - Colored tables and clear status messages
 - 🔒 **JSON validation** - Ensures all configurations are valid JSON
+- ⚠️ **Conflict detection** - Detects and resolves sync conflicts safely
 
 ## Installation
 
@@ -93,6 +95,42 @@ claude-switch validate my-config         # Validate specific configuration
 claude-switch validate --verbose --all   # Detailed validation output
 ```
 
+### Sync changes back to stored config
+
+Save changes from your live `~/.claude/settings.json` back to the stored configuration:
+
+```bash
+claude-switch sync                        # Sync current configuration
+claude-switch sync my-config              # Sync specific configuration
+claude-switch sync --dry-run              # Preview changes without saving
+claude-switch sync --force                # Skip confirmation prompt
+```
+
+The sync command will:
+1. Compare live settings.json with the stored configuration
+2. Display detected changes in a diff format
+3. Check for conflicts (if stored config was modified externally)
+4. Prompt for confirmation before saving
+
+For detailed sync documentation, see [docs/SYNC_GUIDE.md](docs/SYNC_GUIDE.md).
+
+### Auto-sync when switching configurations
+
+Automatically sync your current config before switching to another:
+
+```bash
+claude-switch apply new-config --auto-sync
+```
+
+### Check sync status
+
+View current configuration and detect unsaved changes:
+
+```bash
+claude-switch status                      # Show current config and sync status
+claude-switch status --diff               # Show diff of unsaved changes
+```
+
 ### Help
 
 ```bash
@@ -105,6 +143,7 @@ claude-switch add --help        # Command-specific help
 - **Tool data**: `~/.claude-switch/`
 - **Configuration files**: `~/.claude-switch/configs/`
 - **Metadata**: `~/.claude-switch/config.json`
+- **State tracking**: `~/.claude-switch/state.json`
 - **Target file**: `~/.claude/settings.json`
 - **Backups**: `~/.claude/settings.json.backup`
 
@@ -145,6 +184,9 @@ claude-switch list
 # Apply a configuration
 claude-switch apply work-setup
 
+# Sync changes back after editing settings
+claude-switch sync
+
 # Validate configurations
 claude-switch validate
 
@@ -164,6 +206,15 @@ claude-switch list --detailed
 # Apply with confirmation
 claude-switch apply work-setup --confirm
 
+# Auto-sync before switching configs
+claude-switch apply new-config --auto-sync
+
+# Sync with verbose diff output
+claude-switch sync --verbose
+
+# Preview sync changes without saving
+claude-switch sync --dry-run
+
 # Validate with verbose output
 claude-switch validate --verbose --all
 
@@ -178,6 +229,8 @@ claude-switch remove old-config --dry-run
 - **Atomic operations** - File operations are atomic to prevent corruption
 - **Confirmation prompts** - Important operations require confirmation
 - **Rollback support** - Easy rollback instructions provided
+- **Conflict detection** - Detects when stored configs are modified externally
+- **Sync safety** - Preview changes with `--dry-run` before syncing
 
 ## Error Handling
 
@@ -202,6 +255,15 @@ The tool includes comprehensive error handling for:
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Changelog
+
+### v1.1.0
+
+- New sync command to save live settings back to stored configs
+- Diff detection with colored output
+- Conflict detection and resolution
+- Auto-sync flag for apply command (`--auto-sync`)
+- State tracking for current configuration
+- Comprehensive sync documentation
 
 ### v1.0.0
 

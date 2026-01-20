@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Xanonymous-GitHub/claude-switch/internal/diff"
 	"github.com/Xanonymous-GitHub/claude-switch/internal/validation"
 	"github.com/google/uuid"
 )
@@ -20,10 +21,28 @@ type Config struct {
 	FilePath    string    `json:"file_path"`
 }
 
+// StateMetadata tracks current configuration state
+type StateMetadata struct {
+	CurrentConfigID string    `json:"current_config_id"`
+	LastSyncTime    time.Time `json:"last_sync_time"`
+}
+
+// ConflictError represents a sync conflict
+type ConflictError struct {
+	ConfigName string
+	StoredDiff *diff.DiffResult
+	LiveDiff   *diff.DiffResult
+}
+
+func (e *ConflictError) Error() string {
+	return fmt.Sprintf("conflict detected in config '%s': both stored config and live settings were modified", e.ConfigName)
+}
+
 // Manager handles configuration operations
 type Manager struct {
 	configDir string
 	configs   []Config
+	state     StateMetadata
 }
 
 // NewManager creates a new configuration manager
@@ -52,6 +71,10 @@ func NewManager() (*Manager, error) {
 
 	if err := manager.loadConfigs(); err != nil {
 		return nil, fmt.Errorf("failed to load configurations: %w", err)
+	}
+
+	if err := manager.loadState(); err != nil {
+		return nil, fmt.Errorf("failed to load state: %w", err)
 	}
 
 	return manager, nil
@@ -176,6 +199,11 @@ func (m *Manager) ApplyConfig(identifier string) error {
 	fmt.Printf("Applied configuration '%s' to ~/.claude/settings.json\n", config.Name)
 	fmt.Printf("Backup saved as: %s\n", backupPath)
 
+	// Track this as the current configuration
+	if err := m.SetCurrentConfig(config.ID); err != nil {
+		return fmt.Errorf("failed to track current config: %w", err)
+	}
+
 	return nil
 }
 
@@ -274,6 +302,184 @@ func copyFile(src, dst string) error {
 
 	if err := os.WriteFile(dst, sourceData, 0644); err != nil {
 		return fmt.Errorf("failed to write destination file: %w", err)
+	}
+
+	return nil
+}
+
+// SetCurrentConfig sets the currently active configuration
+func (m *Manager) SetCurrentConfig(configID string) error {
+	m.state.CurrentConfigID = configID
+	m.state.LastSyncTime = time.Now()
+	return m.saveState()
+}
+
+// GetCurrentConfig returns the currently active configuration ID
+func (m *Manager) GetCurrentConfig() (string, error) {
+	return m.state.CurrentConfigID, nil
+}
+
+// ClearCurrentConfig clears the current configuration tracking
+func (m *Manager) ClearCurrentConfig() error {
+	m.state.CurrentConfigID = ""
+	m.state.LastSyncTime = time.Time{}
+	return m.saveState()
+}
+
+// loadState loads state metadata from file
+func (m *Manager) loadState() error {
+	statePath := filepath.Join(m.configDir, "state.json")
+
+	data, err := os.ReadFile(statePath)
+	if os.IsNotExist(err) {
+		// File doesn't exist, start with empty state
+		m.state = StateMetadata{}
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to read state metadata: %w", err)
+	}
+
+	if err := json.Unmarshal(data, &m.state); err != nil {
+		return fmt.Errorf("failed to parse state metadata: %w", err)
+	}
+
+	return nil
+}
+
+// saveState saves state metadata to file
+func (m *Manager) saveState() error {
+	statePath := filepath.Join(m.configDir, "state.json")
+
+	data, err := json.MarshalIndent(m.state, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal state metadata: %w", err)
+	}
+
+	if err := os.WriteFile(statePath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write state metadata: %w", err)
+	}
+
+	return nil
+}
+
+// DetectChanges compares live settings.json with stored config
+func (m *Manager) DetectChanges(settingsPath string) (bool, *diff.DiffResult, error) {
+	// Get current config
+	currentID, err := m.GetCurrentConfig()
+	if err != nil {
+		return false, nil, err
+	}
+
+	if currentID == "" {
+		return false, nil, fmt.Errorf("no current configuration set")
+	}
+
+	// Get the stored config
+	config, err := m.GetConfig(currentID)
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to get current config: %w", err)
+	}
+
+	// Read both files
+	storedData, err := os.ReadFile(config.FilePath)
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to read stored config: %w", err)
+	}
+
+	liveData, err := os.ReadFile(settingsPath)
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to read live settings: %w", err)
+	}
+
+	// Compute diff
+	diffResult, err := diff.ComputeJSONDiff(string(storedData), string(liveData))
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to compute diff: %w", err)
+	}
+
+	return diffResult.HasChanges, diffResult, nil
+}
+
+// SyncConfig synchronizes live settings.json back to stored config
+func (m *Manager) SyncConfig(settingsPath string) error {
+	// Get current config
+	currentID, err := m.GetCurrentConfig()
+	if err != nil {
+		return err
+	}
+
+	if currentID == "" {
+		return fmt.Errorf("no current configuration set")
+	}
+
+	config, err := m.GetConfig(currentID)
+	if err != nil {
+		return fmt.Errorf("failed to get current config: %w", err)
+	}
+
+	// Check for conflicts (stored config modified externally)
+	if err := m.checkForConflicts(config, settingsPath); err != nil {
+		return err
+	}
+
+	// Read live settings
+	liveData, err := os.ReadFile(settingsPath)
+	if err != nil {
+		return fmt.Errorf("failed to read live settings: %w", err)
+	}
+
+	// Validate before saving
+	if err := validation.ValidateJSON(liveData); err != nil {
+		return fmt.Errorf("live settings contain invalid JSON: %w", err)
+	}
+
+	// Create backup of stored config
+	backupPath := config.FilePath + ".backup"
+	if err := copyFile(config.FilePath, backupPath); err != nil {
+		return fmt.Errorf("failed to create backup: %w", err)
+	}
+
+	// Write to stored config
+	if err := os.WriteFile(config.FilePath, liveData, 0644); err != nil {
+		// Restore backup on failure
+		copyFile(backupPath, config.FilePath)
+		return fmt.Errorf("failed to write config: %w", err)
+	}
+
+	// Update sync time
+	if err := m.SetCurrentConfig(currentID); err != nil {
+		return fmt.Errorf("failed to update sync time: %w", err)
+	}
+
+	return nil
+}
+
+// checkForConflicts detects if stored config was modified externally
+func (m *Manager) checkForConflicts(config *Config, settingsPath string) error {
+	// Get file modification times
+	storedInfo, err := os.Stat(config.FilePath)
+	if err != nil {
+		return fmt.Errorf("failed to stat stored config: %w", err)
+	}
+
+	// If we have never synced before, there is no reference point for conflicts
+	if m.state.LastSyncTime.IsZero() {
+		return nil
+	}
+	// If stored config was modified after last sync, we have a conflict
+	if storedInfo.ModTime().After(m.state.LastSyncTime) {
+		// Read both versions
+		storedData, _ := os.ReadFile(config.FilePath)
+		liveData, _ := os.ReadFile(settingsPath)
+
+		// Compute diffs to show in error
+		storedDiff, _ := diff.ComputeJSONDiff(string(storedData), string(liveData))
+
+		return &ConflictError{
+			ConfigName: config.Name,
+			StoredDiff: storedDiff,
+		}
 	}
 
 	return nil
