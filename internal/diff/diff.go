@@ -141,7 +141,12 @@ func generateUnifiedDiff(diffs []diffmatchpatch.Diff) string {
 func countChanges(diffs []diffmatchpatch.Diff) (added, deleted int) {
 	for _, diff := range diffs {
 		lines := strings.Split(diff.Text, "\n")
-		count := len(lines) - 1 // Subtract 1 for trailing newline
+		count := len(lines)
+		// If the text ends with a newline, strings.Split will produce
+		// a trailing empty string; don't count that as a line.
+		if count > 0 && lines[count-1] == "" {
+			count--
+		}
 		if count < 0 {
 			count = 0
 		}
