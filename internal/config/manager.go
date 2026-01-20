@@ -463,6 +463,10 @@ func (m *Manager) checkForConflicts(config *Config, settingsPath string) error {
 		return fmt.Errorf("failed to stat stored config: %w", err)
 	}
 
+	// If we have never synced before, there is no reference point for conflicts
+	if m.state.LastSyncTime.IsZero() {
+		return nil
+	}
 	// If stored config was modified after last sync, we have a conflict
 	if storedInfo.ModTime().After(m.state.LastSyncTime) {
 		// Read both versions
