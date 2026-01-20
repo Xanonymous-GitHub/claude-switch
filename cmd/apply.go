@@ -40,6 +40,7 @@ func init() {
 	applyCmd.Flags().BoolP("confirm", "c", false, "Prompt for confirmation before applying")
 	applyCmd.Flags().BoolP("force", "f", false, "Force apply without backup confirmation")
 	applyCmd.Flags().BoolP("dry-run", "n", false, "Show what would be done without making changes")
+	applyCmd.Flags().Bool("auto-sync", false, "Automatically sync current config before switching")
 }
 
 func runApply(cmd *cobra.Command, args []string) error {
@@ -56,6 +57,38 @@ func runApply(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to initialize config manager: %w", err)
 	}
 
+	// Get flags
+	autoSync, _ := cmd.Flags().GetBool("auto-sync")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+
+	// Auto-sync current config if requested
+	if autoSync && !dryRun {
+		settingsPath, err := manager.GetClaudeSettingsPath()
+		if err != nil {
+			return err
+		}
+
+		currentID, _ := manager.GetCurrentConfig()
+		if currentID != "" && currentID != identifier {
+			fmt.Println("Auto-syncing current configuration...")
+
+			hasChanges, diffResult, err := manager.DetectChanges(settingsPath)
+			if err != nil {
+				fmt.Printf("Warning: Failed to detect changes: %v\n", err)
+			} else if hasChanges {
+				fmt.Printf("Detected %d additions, %d deletions\n",
+					diffResult.AddedLines, diffResult.DeletedLines)
+
+				if err := manager.SyncConfig(settingsPath); err != nil {
+					fmt.Printf("Warning: Failed to auto-sync: %v\n", err)
+				} else {
+					fmt.Println("Current config synced")
+				}
+			}
+			fmt.Println()
+		}
+	}
+
 	// Get the configuration
 	cfg, err := manager.GetConfig(identifier)
 	if err != nil {
@@ -65,7 +98,6 @@ func runApply(cmd *cobra.Command, args []string) error {
 	// Get flags
 	confirm, _ := cmd.Flags().GetBool("confirm")
 	force, _ := cmd.Flags().GetBool("force")
-	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	// Get paths
 	settingsPath, err := manager.GetClaudeSettingsPath()
