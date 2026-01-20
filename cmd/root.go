@@ -17,10 +17,12 @@ Features:
   - Add new configurations using your preferred editor (supports Neovim)
   - List all saved configurations
   - Apply any configuration to ~/.claude/settings.json with JSON validation
+  - Sync live settings changes back to stored configurations
+  - Check sync status and detect unsaved changes
   - Remove configurations you no longer need
   - Validate configuration files for proper JSON formatting
-  - Safe backup and restore mechanisms`,
-	Version: "1.0.0",
+  - Safe backup and restore mechanisms with conflict detection`,
+	Version: "1.1.0",
 	Example: `  # Add a new configuration
   claude-switch add
 
@@ -29,6 +31,12 @@ Features:
 
   # Apply a specific configuration
   claude-switch apply my-config
+
+  # Sync changes back to stored config
+  claude-switch sync
+
+  # Check current status and unsaved changes
+  claude-switch status
 
   # Validate configurations
   claude-switch validate
@@ -52,6 +60,8 @@ func init() {
 	rootCmd.AddCommand(applyCmd)
 	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(statusCmd)
 }
 
 // checkPrerequisites validates the environment before running commands
