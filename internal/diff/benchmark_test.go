@@ -79,7 +79,7 @@ func BenchmarkFormatDiff(b *testing.B) {
 func generateTestJSON(size int) string {
 	var sb strings.Builder
 	sb.WriteString("{\n")
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if i > 0 {
 			sb.WriteString(",\n")
 		}

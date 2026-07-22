@@ -46,7 +46,7 @@ func ComputeJSONDiff(original, modified string) (*DiffResult, error) {
 	}
 
 	// Normalize JSON by parsing and re-marshaling with consistent formatting
-	var origObj, modObj interface{}
+	var origObj, modObj any
 
 	if err := json.Unmarshal([]byte(original), &origObj); err != nil {
 		return nil, fmt.Errorf("invalid original JSON: %w", err)
@@ -173,8 +173,8 @@ func FormatDiff(result *DiffResult, useColor bool) string {
 	output.WriteString(fmt.Sprintf("   %s\n\n", result.Summary))
 
 	if useColor {
-		lines := strings.Split(result.Unified, "\n")
-		for _, line := range lines {
+		lines := strings.SplitSeq(result.Unified, "\n")
+		for line := range lines {
 			if strings.HasPrefix(line, "+ ") {
 				output.WriteString(color.GreenString(line))
 			} else if strings.HasPrefix(line, "- ") {

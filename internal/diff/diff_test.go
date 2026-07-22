@@ -76,7 +76,7 @@ func TestComputeJSONDiffLargeFile(t *testing.T) {
 	// Create a large JSON string (over MaxDiffSize)
 	var sb strings.Builder
 	sb.WriteString("{")
-	for i := 0; i < 60000; i++ { // This creates a ~600KB file
+	for i := range 60000 { // This creates a ~600KB file
 		if i > 0 {
 			sb.WriteString(",")
 		}

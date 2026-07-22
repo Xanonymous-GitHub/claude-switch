@@ -18,7 +18,7 @@ func ValidateJSONFile(filePath string) error {
 
 // ValidateJSON validates that the provided data is valid JSON
 func ValidateJSON(data []byte) error {
-	var jsonData interface{}
+	var jsonData any
 	if err := json.Unmarshal(data, &jsonData); err != nil {
 		return fmt.Errorf("invalid JSON format: %w", err)
 	}
@@ -33,7 +33,7 @@ func ValidateClaudeSettings(data []byte) error {
 	}
 
 	// Parse as a generic map to check structure
-	var settings map[string]interface{}
+	var settings map[string]any
 	if err := json.Unmarshal(data, &settings); err != nil {
 		return fmt.Errorf("failed to parse JSON as object: %w", err)
 	}
